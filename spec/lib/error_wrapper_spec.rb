@@ -40,7 +40,7 @@ describe BatchApi::ErrorWrapper do
     end
 
     it "returns the JSONified body as the 2nd" do
-      expect(error.render[2]).to eq([MultiJson.dump(error.body)])
+      expect(error.render[2]).to eq([JSON.dump(error.body)])
     end
   end
 
