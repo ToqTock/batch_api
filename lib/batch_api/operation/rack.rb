@@ -13,7 +13,7 @@ module BatchApi
       def initialize(op, base_env, app)
         @op = op
 
-        @method = op["method"] || "get"
+	@method = op["method"] ? op['method'].to_s.downcase : "get"
         @url = op["url"]
         @params = op["params"] || ActiveSupport::HashWithIndifferentAccess.new
         @headers = op["headers"] || {}
@@ -65,11 +65,7 @@ module BatchApi
         @env["ORIGINAL_FULLPATH"] = @env["PATH_INFO"] = @url
 
         get_params = ::Rack::Utils.parse_nested_query(uri.query).merge(@params)
-        if @method == 'get'
-          qs = CGI.escape(::Rack::Utils.build_nested_query(get_params))
-        else
-          qs = uri.query
-        end
+        qs = CGI.escape(::Rack::Utils.build_nested_query(get_params))
 
         @env["rack.request.query_string"] = qs
         @env["QUERY_STRING"] = qs
