@@ -12,7 +12,10 @@ describe BatchApi::Operation::Rack do
 
   # for env, see bottom of file - it's long
   let(:operation) { BatchApi::Operation::Rack.new(op_params, env, app) }
-  let(:app) { double("application", call: [200, {}, ["foo"]]) }
+  let(:app) { stub("application", call: [200, {}, ["foo"]]) }
+  let(:op_uri)       { URI.parse(operation.url) }
+  let(:op_query_string) { op_uri.query }
+  let(:op_query_params) { ::Rack::Utils.parse_nested_query(op_query_string) }
 
   describe "accessors" do
     [
@@ -21,7 +24,7 @@ describe BatchApi::Operation::Rack do
     ].each do |a|
       attr = a
       it "has an accessor for #{attr}" do
-        value = double
+        value = stub
         operation.send("#{attr}=", value)
         expect(operation.send(attr)).to eq(value)
       end
@@ -115,6 +118,7 @@ describe BatchApi::Operation::Rack do
       key = "REQUEST_PATH"
       expect(processed_env[key]).not_to eq(env[key])
       expect(processed_env[key]).to eq(op_params["url"].split("?").first)
+      expect(processed_env[key]).to eq(op_uri.path)
     end
 
     it "updates the original fullpath" do
@@ -132,13 +136,13 @@ describe BatchApi::Operation::Rack do
     it "updates the rack query string" do
       key = "rack.request.query_string"
       expect(processed_env[key]).not_to eq(env[key])
-      expect(processed_env[key]).to eq(op_params["url"].split("?").last)
+      expect(processed_env[key]).to eq(op_query_string)
     end
 
     it "updates the QUERY_STRING" do
       key = "QUERY_STRING"
       expect(processed_env[key]).not_to eq(env[key])
-      expect(processed_env[key]).to eq(op_params["url"].split("?").last)
+      expect(processed_env[key]).to eq(op_query_string)
     end
 
     it "updates the form hash" do
@@ -150,10 +154,11 @@ describe BatchApi::Operation::Rack do
     context "query_hash" do
       it "sets it to params for a GET" do
         operation.method = "get"
-        processed_env = operation.tap {|o| o.process_env}.env
+        processed_env = operation.tap {|o| o.process_env }.env
+        get_params = op_query_params.merge(op_params['params'])
         key = "rack.request.query_hash"
         expect(processed_env[key]).not_to eq(env[key])
-        expect(processed_env[key]).to eq(op_params["params"])
+        expect(processed_env[key]).to eq(get_params)
       end
 
       it "sets it to nil for a POST" do
