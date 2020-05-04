@@ -64,8 +64,8 @@ module BatchApi
         @env["REQUEST_PATH"] = uri.path
         @env["ORIGINAL_FULLPATH"] = @env["PATH_INFO"] = @url
 
+        get_params = ::Rack::Utils.parse_nested_query(uri.query).merge(@params)
         if @method == 'get'
-          get_params = ::Rack::Utils.parse_nested_query(uri.query).merge(@params)
           qs = CGI.escape(::Rack::Utils.build_nested_query(get_params))
         else
           qs = uri.query
@@ -76,7 +76,7 @@ module BatchApi
 
         # parameters
         @env["rack.request.form_hash"] = @params
-        @env["rack.request.query_hash"] = @method == "get" ? get_params : nil
+        @env["rack.request.query_hash"] = get_params
       end
     end
   end
